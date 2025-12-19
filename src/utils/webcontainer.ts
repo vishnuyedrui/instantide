@@ -146,10 +146,6 @@ export async function startDevServer(
     
     onOutput?.("\n\x1b[32m✓ Dependencies installed successfully!\x1b[0m\n\n");
     
-    // Update status to running before finding dev script
-    onStatusChange?.("running");
-    onOutput?.("\x1b[36m➜ Finding dev script...\x1b[0m\n");
-    
     // Find the right dev script
     const devScript = await findDevScript(container);
     
@@ -160,6 +156,7 @@ export async function startDevServer(
     }
     
     // Start dev server
+    onStatusChange?.("running");
     onOutput?.(`\x1b[36m➜ Running npm run ${devScript}...\x1b[0m\n\n`);
     
     const serverProcess = await container.spawn("npm", ["run", devScript]);
