@@ -28,10 +28,14 @@ export async function bootWebContainer(): Promise<WebContainer> {
     return bootPromise;
   }
   
-  bootPromise = WebContainer.boot();
-  webcontainerInstance = await bootPromise;
-  
-  return webcontainerInstance;
+  try {
+    bootPromise = WebContainer.boot();
+    webcontainerInstance = await bootPromise;
+    return webcontainerInstance;
+  } catch (error) {
+    bootPromise = null;
+    throw error;
+  }
 }
 
 export async function mountFiles(
@@ -60,6 +64,40 @@ export async function runCommand(
   return process.exit;
 }
 
+async function findDevScript(container: WebContainer): Promise<string | null> {
+  // Try to read package.json to find the right script
+  try {
+    const packageJsonProcess = await container.spawn("cat", ["package.json"]);
+    let packageJsonContent = "";
+    
+    await packageJsonProcess.output.pipeTo(
+      new WritableStream({
+        write(data) {
+          packageJsonContent += data;
+        },
+      })
+    );
+    
+    const exitCode = await packageJsonProcess.exit;
+    if (exitCode !== 0) return null;
+    
+    const packageJson = JSON.parse(packageJsonContent);
+    const scripts = packageJson.scripts || {};
+    
+    // Check for common dev script names in order of preference
+    const devScripts = ["dev", "start", "serve", "develop", "watch"];
+    for (const script of devScripts) {
+      if (scripts[script]) {
+        return script;
+      }
+    }
+    
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function startDevServer(
   container: WebContainer,
   callbacks: ContainerCallbacks
@@ -86,11 +124,20 @@ export async function startDevServer(
     
     onOutput?.("\n\x1b[32m✓ Dependencies installed successfully!\x1b[0m\n\n");
     
+    // Find the right dev script
+    const devScript = await findDevScript(container);
+    
+    if (!devScript) {
+      onError?.("No dev/start script found in package.json. The project needs a 'dev', 'start', or 'serve' script.");
+      onStatusChange?.("error");
+      return;
+    }
+    
     // Start dev server
     onStatusChange?.("running");
-    onOutput?.("\x1b[36m➜ Starting development server...\x1b[0m\n\n");
+    onOutput?.(`\x1b[36m➜ Running npm run ${devScript}...\x1b[0m\n\n`);
     
-    const serverProcess = await container.spawn("npm", ["run", "dev"]);
+    const serverProcess = await container.spawn("npm", ["run", devScript]);
     
     serverProcess.output.pipeTo(
       new WritableStream({
@@ -110,13 +157,13 @@ export async function startDevServer(
     // Handle server exit
     serverProcess.exit.then((code) => {
       if (code !== 0) {
-        onError?.(`Dev server exited with code ${code}`);
+        onError?.(`Dev server exited with code ${code}. Check terminal for details.`);
         onStatusChange?.("error");
       }
     });
     
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const message = error instanceof Error ? error.message : "Unknown error occurred";
     onError?.(message);
     onStatusChange?.("error");
   }
@@ -132,13 +179,14 @@ export async function runFullWorkflow(
     // Boot
     onStatusChange?.("booting");
     onOutput?.("\x1b[36m➜ Booting WebContainer...\x1b[0m\n");
+    onOutput?.("\x1b[33m  (This requires Cross-Origin-Isolation headers)\x1b[0m\n\n");
     
     const container = await bootWebContainer();
-    onOutput?.("\x1b[32m✓ WebContainer booted!\x1b[0m\n\n");
+    onOutput?.("\x1b[32m✓ WebContainer booted successfully!\x1b[0m\n\n");
     
     // Mount
     onStatusChange?.("mounting");
-    onOutput?.("\x1b[36m➜ Mounting files...\x1b[0m\n");
+    onOutput?.("\x1b[36m➜ Mounting files to virtual filesystem...\x1b[0m\n");
     
     await mountFiles(container, files);
     onOutput?.("\x1b[32m✓ Files mounted!\x1b[0m\n\n");
@@ -147,8 +195,17 @@ export async function runFullWorkflow(
     await startDevServer(container, callbacks);
     
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
-    onError?.(message);
+    const message = error instanceof Error ? error.message : "Unknown error occurred";
+    
+    // Provide more helpful error messages
+    if (message.includes("SharedArrayBuffer")) {
+      onError?.("WebContainers require Cross-Origin-Isolation headers. Please ensure the server is configured correctly.");
+    } else if (message.includes("boot")) {
+      onError?.("Failed to boot WebContainer. This feature requires a modern browser with WebAssembly support.");
+    } else {
+      onError?.(message);
+    }
+    
     onStatusChange?.("error");
   }
 }
