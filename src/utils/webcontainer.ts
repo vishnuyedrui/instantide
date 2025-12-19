@@ -3,6 +3,27 @@ import { WebContainer, FileSystemTree } from "@webcontainer/api";
 let webcontainerInstance: WebContainer | null = null;
 let bootPromise: Promise<WebContainer> | null = null;
 
+// Check if WebContainers are supported in this environment
+export function checkWebContainerSupport(): { supported: boolean; reason?: string } {
+  // Check for SharedArrayBuffer (required for WebContainers)
+  if (typeof SharedArrayBuffer === "undefined") {
+    return {
+      supported: false,
+      reason: "SharedArrayBuffer is not available. This usually means the page is missing Cross-Origin-Isolation headers (COOP/COEP).",
+    };
+  }
+
+  // Check for basic WebAssembly support
+  if (typeof WebAssembly === "undefined") {
+    return {
+      supported: false,
+      reason: "WebAssembly is not supported in this browser.",
+    };
+  }
+
+  return { supported: true };
+}
+
 export type ContainerStatus = 
   | "idle"
   | "booting"

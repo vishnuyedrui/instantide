@@ -51,6 +51,10 @@
     --neon-pink: 320 100% 60%;
     --deep-space: 240 10% 3%;
     --glass: 240 10% 20%;
+    
+    /* Warning color */
+    --warning: 38 92% 50%;
+    --warning-foreground: 240 10% 4%;
   }
 
   .dark {

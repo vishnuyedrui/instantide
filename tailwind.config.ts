@@ -63,6 +63,10 @@ export default {
           pink: "hsl(var(--neon-pink))",
         },
         glass: "hsl(var(--glass))",
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
