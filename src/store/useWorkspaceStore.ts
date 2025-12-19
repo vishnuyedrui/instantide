@@ -1,10 +1,12 @@
 import { create } from "zustand";
 import type { FileTreeNode, ParsedGitHubUrl, FileSystemTree } from "@/utils/github";
 import type { ContainerStatus } from "@/utils/webcontainer";
+import type { ProjectInfo } from "@/utils/projectDetection";
 
 interface WorkspaceState {
   // Repository info
   repoInfo: ParsedGitHubUrl | null;
+  projectInfo: ProjectInfo | null;
   
   // File tree
   fileTree: FileTreeNode[];
@@ -31,6 +33,7 @@ interface WorkspaceState {
   
   // Actions
   setRepoInfo: (info: ParsedGitHubUrl | null) => void;
+  setProjectInfo: (info: ProjectInfo | null) => void;
   setFileTree: (tree: FileTreeNode[]) => void;
   toggleFolder: (path: string) => void;
   setSelectedFile: (file: FileTreeNode | null) => void;
@@ -50,6 +53,7 @@ interface WorkspaceState {
 
 const initialState = {
   repoInfo: null,
+  projectInfo: null,
   fileTree: [],
   expandedFolders: new Set<string>(),
   selectedFile: null,
@@ -69,6 +73,8 @@ export const useWorkspaceStore = create<WorkspaceState>((set) => ({
   ...initialState,
   
   setRepoInfo: (info) => set({ repoInfo: info }),
+  
+  setProjectInfo: (info) => set({ projectInfo: info }),
   
   setFileTree: (tree) => set({ fileTree: tree }),
   

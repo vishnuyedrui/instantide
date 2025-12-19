@@ -9,8 +9,8 @@ import {
   fetchRepoTree,
   transformToNestedTree,
   buildFileSystemTree,
-  validateNodejsRepo,
 } from "@/utils/github";
+import { detectProjectType } from "@/utils/projectDetection";
 import { runFullWorkflow } from "@/utils/webcontainer";
 
 export function LandingPage() {
@@ -22,6 +22,7 @@ export function LandingPage() {
     loadingProgress,
     error,
     setRepoInfo,
+    setProjectInfo,
     setFileTree,
     setFileSystemTree,
     setIsLoadingRepo,
@@ -55,11 +56,8 @@ export function LandingPage() {
       // Fetch repository tree
       const files = await fetchRepoTree(parsed.owner, parsed.repo, parsed.branch);
       
-      // Validate it's a Node.js repo
-      const validation = validateNodejsRepo(files);
-      if (!validation.valid) {
-        throw new Error(validation.error);
-      }
+      // Detect project type
+      const projectInfo = detectProjectType(files);
 
       // Transform to nested tree for UI
       const nestedTree = transformToNestedTree(files);
@@ -76,19 +74,20 @@ export function LandingPage() {
 
       // Update store
       setRepoInfo(parsed);
+      setProjectInfo(projectInfo);
       setFileTree(nestedTree);
       setFileSystemTree(fsTree);
       setView("workspace");
       setIsLoadingRepo(false);
       setLoadingProgress(null);
 
-      // Start WebContainer workflow
+      // Start WebContainer workflow with project type
       runFullWorkflow(fsTree, {
         onStatusChange: setContainerStatus,
         onOutput: appendTerminalOutput,
         onServerReady: setPreviewUrl,
         onError: (err) => setError(err),
-      });
+      }, projectInfo.type);
 
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to load repository";

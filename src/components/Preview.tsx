@@ -1,11 +1,11 @@
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
-import { ExternalLink, Loader2, Monitor, RefreshCw, AlertTriangle, Copy, Check } from "lucide-react";
+import { ExternalLink, Loader2, Monitor, RefreshCw, AlertTriangle, Copy, Check, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { checkWebContainerSupport } from "@/utils/webcontainer";
 
 export function Preview() {
-  const { previewUrl, containerStatus, error } = useWorkspaceStore();
+  const { previewUrl, containerStatus, error, projectInfo } = useWorkspaceStore();
   const [key, setKey] = useState(0);
   const [copied, setCopied] = useState(false);
 
@@ -13,6 +13,7 @@ export function Preview() {
   const hasError = containerStatus === "error";
   const webContainerSupport = checkWebContainerSupport();
   const isWebContainerError = hasError && !webContainerSupport.supported;
+  const isCodeBrowsingOnly = projectInfo && !projectInfo.canRun;
 
   const handleRefresh = () => {
     setKey((k) => k + 1);
@@ -106,6 +107,23 @@ export function Preview() {
             title="Preview"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
           />
+        )}
+
+        {isCodeBrowsingOnly && containerStatus === "ready" && !previewUrl && (
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground px-6">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+              <Code2 className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Code Browsing Mode
+            </h3>
+            <p className="text-sm text-center max-w-md mb-2">
+              {projectInfo?.description}
+            </p>
+            <p className="text-xs text-muted-foreground text-center">
+              Browse the code in the file tree on the left. WebContainers only support Node.js runtime.
+            </p>
+          </div>
         )}
 
         {containerStatus === "idle" && (
