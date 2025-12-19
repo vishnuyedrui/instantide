@@ -1,4 +1,5 @@
 import { WebContainer, FileSystemTree } from "@webcontainer/api";
+import type { ProjectType } from "./projectDetection";
 
 let webcontainerInstance: WebContainer | null = null;
 let bootPromise: Promise<WebContainer> | null = null;
@@ -190,11 +191,116 @@ export async function startDevServer(
   }
 }
 
-export async function runFullWorkflow(
-  files: FileSystemTree,
+// Serve static files using a simple server
+async function serveStaticSite(
+  container: WebContainer,
   callbacks: ContainerCallbacks
 ): Promise<void> {
+  const { onStatusChange, onOutput, onServerReady, onError } = callbacks;
+
+  try {
+    // Create a minimal package.json for serve
+    onStatusChange?.("installing");
+    onOutput?.("\x1b[36m➜ Setting up static file server...\x1b[0m\n\n");
+
+    await container.fs.writeFile(
+      "package.json",
+      JSON.stringify(
+        {
+          name: "static-server",
+          type: "module",
+          scripts: {
+            start: "npx serve -s . -p 3000",
+          },
+        },
+        null,
+        2
+      )
+    );
+
+    // Install serve
+    const installExitCode = await runCommand(
+      container,
+      "npm",
+      ["install", "serve"],
+      onOutput
+    );
+
+    if (installExitCode !== 0) {
+      onError?.("Failed to install static server.");
+      onStatusChange?.("error");
+      return;
+    }
+
+    onOutput?.("\n\x1b[32m✓ Static server ready!\x1b[0m\n\n");
+
+    // Start server
+    onStatusChange?.("running");
+    onOutput?.("\x1b[36m➜ Starting static file server...\x1b[0m\n\n");
+
+    const serverProcess = await container.spawn("npm", ["run", "start"]);
+
+    serverProcess.output.pipeTo(
+      new WritableStream({
+        write(data) {
+          onOutput?.(data);
+        },
+      })
+    );
+
+    // Listen for server ready
+    container.on("server-ready", (port, url) => {
+      onOutput?.(`\n\x1b[32m✓ Static server ready on port ${port}\x1b[0m\n`);
+      onServerReady?.(url);
+      onStatusChange?.("ready");
+    });
+
+    serverProcess.exit.then((code) => {
+      if (code !== 0) {
+        onError?.(`Static server exited with code ${code}.`);
+        onStatusChange?.("error");
+      }
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    onError?.(message);
+    onStatusChange?.("error");
+  }
+}
+
+export async function runFullWorkflow(
+  files: FileSystemTree,
+  callbacks: ContainerCallbacks,
+  projectType: ProjectType = "nodejs"
+): Promise<void> {
   const { onStatusChange, onOutput, onError } = callbacks;
+
+  // For non-runnable projects, just mount files
+  if (projectType !== "nodejs" && projectType !== "static") {
+    try {
+      onStatusChange?.("booting");
+      onOutput?.("\x1b[36m➜ Booting WebContainer for code browsing...\x1b[0m\n\n");
+
+      const container = await bootWebContainer();
+      onOutput?.("\x1b[32m✓ WebContainer booted!\x1b[0m\n\n");
+
+      onStatusChange?.("mounting");
+      onOutput?.("\x1b[36m➜ Mounting files...\x1b[0m\n");
+
+      await mountFiles(container, files);
+      onOutput?.("\x1b[32m✓ Files mounted!\x1b[0m\n\n");
+
+      onOutput?.("\x1b[33m⚠ This project type cannot be executed in the browser.\x1b[0m\n");
+      onOutput?.("\x1b[33m  Code browsing is available in the file tree.\x1b[0m\n");
+      
+      onStatusChange?.("ready");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      onError?.(message);
+      onStatusChange?.("error");
+    }
+    return;
+  }
   
   try {
     // Boot
@@ -212,8 +318,12 @@ export async function runFullWorkflow(
     await mountFiles(container, files);
     onOutput?.("\x1b[32m✓ Files mounted!\x1b[0m\n\n");
     
-    // Start server
-    await startDevServer(container, callbacks);
+    // Start appropriate server based on project type
+    if (projectType === "static") {
+      await serveStaticSite(container, callbacks);
+    } else {
+      await startDevServer(container, callbacks);
+    }
     
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error occurred";

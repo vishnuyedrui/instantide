@@ -6,11 +6,12 @@ import { Terminal } from "./Terminal";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { ArrowLeft, Github, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { teardownWebContainer } from "@/utils/webcontainer";
 
 export function Workspace() {
   const [terminalHeight, setTerminalHeight] = useState(200);
-  const { repoInfo, reset, setView, setContainerStatus, clearTerminalOutput, setPreviewUrl } = useWorkspaceStore();
+  const { repoInfo, projectInfo, reset, setView, setContainerStatus, clearTerminalOutput, setPreviewUrl, setProjectInfo } = useWorkspaceStore();
 
   const handleBack = () => {
     teardownWebContainer();
@@ -18,6 +19,7 @@ export function Workspace() {
     setContainerStatus("idle");
     clearTerminalOutput();
     setPreviewUrl(null);
+    setProjectInfo(null);
     setView("landing");
   };
 
@@ -49,15 +51,25 @@ export function Workspace() {
         </div>
 
         {repoInfo && (
-          <a
-            href={`https://github.com/${repoInfo.owner}/${repoInfo.repo}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Github className="w-4 h-4" />
-            {repoInfo.owner}/{repoInfo.repo}
-          </a>
+          <div className="flex items-center gap-3">
+            {projectInfo && (
+              <Badge 
+                variant={projectInfo.canRun ? "default" : "secondary"}
+                className="text-xs"
+              >
+                {projectInfo.label}
+              </Badge>
+            )}
+            <a
+              href={`https://github.com/${repoInfo.owner}/${repoInfo.repo}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <Github className="w-4 h-4" />
+              {repoInfo.owner}/{repoInfo.repo}
+            </a>
+          </div>
         )}
       </header>
 

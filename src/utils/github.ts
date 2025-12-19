@@ -327,15 +327,3 @@ export async function buildFileSystemTree(
   return tree as FileSystemTree;
 }
 
-export function validateNodejsRepo(files: GitHubFile[]): { valid: boolean; error?: string } {
-  const hasPackageJson = files.some((f) => f.path === "package.json");
-  
-  if (!hasPackageJson) {
-    return {
-      valid: false,
-      error: "This repository doesn't contain a package.json file. Only Node.js projects are supported.",
-    };
-  }
-  
-  return { valid: true };
-}
