@@ -280,7 +280,7 @@ export async function buildFileSystemTree(
   files: GitHubFile[],
   onProgress?: (current: number, total: number, fileName: string) => void
 ): Promise<FileSystemTree> {
-  const tree: FileSystemTree = {};
+  const tree: Record<string, any> = {};
   
   const blobFiles = files.filter(
     (f) => f.type === "blob" && shouldIncludeFile(f.path)
@@ -300,14 +300,14 @@ export async function buildFileSystemTree(
           const content = await fetchFileContent(owner, repo, file.path, file.sha);
           
           const parts = file.path.split("/");
-          let current = tree;
+          let current: Record<string, any> = tree;
           
           for (let j = 0; j < parts.length - 1; j++) {
             const part = parts[j];
             if (!current[part]) {
               current[part] = { directory: {} };
             }
-            current = current[part].directory!;
+            current = current[part].directory;
           }
           
           const fileName = parts[parts.length - 1];
@@ -324,7 +324,7 @@ export async function buildFileSystemTree(
     );
   }
   
-  return tree;
+  return tree as FileSystemTree;
 }
 
 export function validateNodejsRepo(files: GitHubFile[]): { valid: boolean; error?: string } {
