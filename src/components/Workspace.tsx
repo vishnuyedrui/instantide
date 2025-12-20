@@ -1,16 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
 import { FileTree } from "./FileTree";
 import { CodeEditor } from "./CodeEditor";
 import { Preview } from "./Preview";
