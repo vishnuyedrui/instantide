@@ -3,6 +3,7 @@ import { Github, Rocket, Settings, Zap, Code2, Terminal as TerminalIcon } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SettingsModal } from "./SettingsModal";
+import { AdSense } from "./AdSense";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import {
   parseGitHubUrl,
@@ -219,6 +220,15 @@ export function LandingPage() {
               icon={<Zap className="w-6 h-6" />}
               title="Instant Preview"
               description="Watch your app come to life in seconds"
+            />
+          </div>
+
+          {/* AdSense Ad */}
+          <div className="pt-8 animate-fade-in" style={{ animationDelay: "0.3s" }}>
+            <AdSense 
+              adFormat="horizontal"
+              className="flex justify-center"
+              style={{ minHeight: "100px", maxWidth: "728px", margin: "0 auto" }}
             />
           </div>
         </div>
