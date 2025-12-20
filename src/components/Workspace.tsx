@@ -2,6 +2,7 @@ import { FileTree } from "./FileTree";
 import { CodeEditor } from "./CodeEditor";
 import { Preview } from "./Preview";
 import { Terminal } from "./Terminal";
+import { AdSense } from "./AdSense";
 import { useWorkspaceStore } from "@/store/useWorkspaceStore";
 import { ArrowLeft, Github, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,8 +76,18 @@ export function Workspace() {
       {/* Main content */}
       <ResizablePanelGroup direction="horizontal" className="flex-1 min-h-0">
         {/* Left sidebar - File Tree */}
-        <ResizablePanel defaultSize={20} minSize={15} className="border-r border-border overflow-hidden">
-          <FileTree />
+        <ResizablePanel defaultSize={20} minSize={15} className="border-r border-border overflow-hidden flex flex-col">
+          <div className="flex-1 overflow-hidden">
+            <FileTree />
+          </div>
+          {/* AdSense Ad in sidebar */}
+          <div className="border-t border-border p-2">
+            <AdSense 
+              adFormat="vertical"
+              className="flex justify-center"
+              style={{ minHeight: "250px", width: "100%" }}
+            />
+          </div>
         </ResizablePanel>
 
         <ResizableHandle />
