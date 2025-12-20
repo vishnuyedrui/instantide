@@ -51,7 +51,18 @@ export async function bootWebContainer(): Promise<WebContainer> {
   }
   
   try {
-    bootPromise = WebContainer.boot();
+    // Race the boot against a 6-second timeout
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error("Boot timed out. Please reload or check if your browser supports WebContainers (Chrome/Edge required)."));
+      }, 6000);
+    });
+    
+    bootPromise = Promise.race([
+      WebContainer.boot(),
+      timeoutPromise
+    ]);
+    
     webcontainerInstance = await bootPromise;
     return webcontainerInstance;
   } catch (error) {
