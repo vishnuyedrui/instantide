@@ -235,7 +235,7 @@ async function serveStaticSite(
           name: "static-server",
           type: "module",
           scripts: {
-            start: "npx serve . -p 3000 --no-clipboard",
+            start: "npx http-server . -p 3000 -c-1",
           },
         },
         null,
@@ -243,11 +243,11 @@ async function serveStaticSite(
       )
     );
 
-    // Install serve
+    // Install http-server
     const installExitCode = await runCommand(
       container,
       "npm",
-      ["install", "serve"],
+      ["install", "http-server"],
       onOutput
     );
 
