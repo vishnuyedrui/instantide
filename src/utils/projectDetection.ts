@@ -76,11 +76,9 @@ export function detectProjectType(files: GitHubFile[]): ProjectInfo {
     return { type: "go", ...PROJECT_TYPE_INFO.go };
   }
   
-  // Check for static HTML site
-  const hasIndexHtml = files.some(
-    (f) => f.path === "index.html" || f.path.endsWith("/index.html")
-  );
-  if (hasIndexHtml) {
+  // Check for static HTML site (any .html file)
+  const hasHtmlFile = files.some((f) => f.path.endsWith(".html"));
+  if (hasHtmlFile) {
     return { type: "static", ...PROJECT_TYPE_INFO.static };
   }
   
