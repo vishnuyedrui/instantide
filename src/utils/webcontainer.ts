@@ -235,7 +235,7 @@ async function serveStaticSite(
           name: "static-server",
           type: "module",
           scripts: {
-            start: "npx serve -s . -p 3000 --no-clipboard",
+            start: "npx serve . -p 3000 --no-clipboard",
           },
         },
         null,
