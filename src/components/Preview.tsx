@@ -103,7 +103,8 @@ export function Preview() {
           <iframe
             key={key}
             src={previewUrl}
-            className="w-full h-full border-0"
+            className="w-full h-full border-0 bg-white"
+            style={{ backgroundColor: '#ffffff' }}
             title="Preview"
             sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals"
             referrerPolicy="no-referrer-when-downgrade"
